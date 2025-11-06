@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PesonaNesia - Jelajahi Wisata Indonesia</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f4f4f4;
+    }
+
+    header {
+      background: #004aad;
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 40px;
+    }
+
+    .brand {
+      font-weight: bold;
+      font-size: 1.5em;
+    }
+
+    nav a {
+      color: white;
+      text-decoration: none;
+      margin-left: 20px;
+      font-weight: 500;
+    }
+
+    nav a:hover {
+      text-decoration: underline;
+    }
+
+    .hero {
+      background: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1500&q=80') center/cover no-repeat;
+      color: white;
+      text-align: center;
+      padding: 100px 20px;
+      position: relative;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.4);
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero h1 {
+      font-size: 2.2em;
+      margin-bottom: 10px;
+    }
+
+    .search {
+      margin-top: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      background-color: rgba(255, 255, 255, 0.15);
+      padding: 15px 25px;
+      border-radius: 40px;
+      backdrop-filter: blur(5px);
+    }
+
+    .search input {
+      width: 350px;
+      padding: 12px 16px;
+      border-radius: 25px;
+      border: 1px solid #ccc;
+      background-color: #ffffff;
+      color: #333;
+      font-size: 15px;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+      transition: 0.3s;
+    }
+
+    .search input:focus {
+      border-color: #004aad;
+      box-shadow: 0 0 10px rgba(0, 74, 173, 0.4);
+      outline: none;
+    }
+
+    .search button {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 25px;
+      background-color: #004aad;
+      color: white;
+      cursor: pointer;
+      font-weight: 600;
+      transition: 0.3s;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .search button:hover {
+      background-color: #003580;
+    }
+
+    .section {
+      padding: 60px 40px;
+      text-align: center;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 25px;
+      margin-top: 30px;
+    }
+
+    .card {
+      background-color: white;
+      border-radius: 15px;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+      overflow: hidden;
+      transition: 0.3s;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.25);
+    }
+
+    .card img {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+    }
+
+    .btn {
+      display: inline-block;
+      margin: 10px 0 15px;
+      padding: 10px 18px;
+      background-color: #004aad;
+      color: white;
+      border-radius: 20px;
+      text-decoration: none;
+      font-weight: bold;
+      transition: 0.3s;
+      cursor: pointer;
+    }
+
+    .btn:hover {
+      background-color: #003580;
+    }
+
+    #map {
+      height: 400px;
+      border-radius: 15px;
+      margin-top: 20px;
+    }
+
+    footer {
+      background: #004aad;
+      color: white;
+      text-align: center;
+      padding: 15px;
+      font-size: 0.9em;
+    }
+
+    #search-result {
+      margin-top: 40px;
+      background: #fff;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+      display: none;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+      text-align: left;
+    }
+
+    #search-result img {
+      border-radius: 10px;
+      margin: 10px 0;
+    }
+
+    #search-result ul {
+      padding-left: 20px;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="brand">PesonaNesia</div>
+    <nav>
+      <a href="#">Home</a>
+      <a href="#">Rekomendasi</a>
+      <a href="#">Rute</a>
+      <a href="#">Review</a>
+      <a href="#">Profil</a>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <div class="hero-content">
+      <h1>Eksplorasi Pesona Indonesia dari Alam hingga Budaya</h1>
+      <p>Rasakan keindahan dari Raja Ampat, Bromo, Borobudur, hingga Bali</p>
+
+      <div class="search">
+        <input id="search-input" list="destinasi-list" type="text"
+          placeholder="Cari destinasi"
+          autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+        <datalist id="destinasi-list"></datalist>
+        <button id="search-btn">Cari</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>Destinasi Populer</h2>
+    <div class="cards" id="cards-container"></div>
+    <div id="search-result"></div>
+  </section>
+
+  <section class="section">
+    <h2>Peta Wisata Indonesia</h2>
+    <div id="map"></div>
+  </section>
+
+  <footer>
+    © 2025 PesonaNesia — Explore Wonderful Indonesia
+  </footer>
+
+  <script>
+    const dataDestinasi = [
+      {
+        nama: "Danau Toba",
+        alamat: "Kabupaten Toba, Sumatera Utara",
+        deskripsi: "Danau Toba merupakan danau vulkanik terbesar di Asia Tenggara yang terbentuk dari letusan supervulkan sekitar 74.000 tahun lalu. Di tengahnya terdapat Pulau Samosir yang menjadi pusat kebudayaan Batak. Pengunjung dapat menikmati keindahan pemandangan danau biru yang tenang, udara sejuk, serta keramahan masyarakat setempat. Selain wisata alam, Danau Toba juga menawarkan wisata budaya seperti rumah adat Batak dan pertunjukan tarian Sigale-gale.",
+        review: [
+          "⭐⭐⭐⭐⭐ — Pemandangan danau sangat menakjubkan dan menenangkan.",
+          "⭐⭐⭐⭐⭐ — Masyarakatnya ramah dan budayanya menarik.",
+          "⭐⭐⭐⭐ — Akses ke beberapa area wisata masih perlu perbaikan.",
+          "⭐⭐⭐⭐⭐ — Tempat terbaik untuk bersantai dan menyatu dengan alam.",
+          "⭐⭐⭐⭐⭐ — Perjalanan ke Pulau Samosir adalah pengalaman yang tak terlupakan."
+        ],
+        gambar: "https://upload.wikimedia.org/wikipedia/commons/c/cc/Danau_Toba_dari_Samosir.jpg"
+      },
+      {
+        nama: "Gunung Bromo",
+        alamat: "Kabupaten Probolinggo, Jawa Timur",
+        deskripsi: "Gunung Bromo terkenal dengan pemandangan matahari terbit yang spektakuler di atas lautan pasir. Wisatawan dapat menyaksikan perpaduan sempurna antara langit berwarna jingga dan siluet gunung-gunung di sekitarnya. Selain itu, kawasan Bromo Tengger Semeru juga dikenal dengan budaya suku Tengger yang unik dan upacara Kasada yang sakral.",
+        review: [
+          "⭐⭐⭐⭐⭐ — Sunrise terbaik yang pernah saya lihat.",
+          "⭐⭐⭐⭐⭐ — Pemandangan menakjubkan dari Penanjakan.",
+          "⭐⭐⭐⭐ — Cuaca dingin tapi sepadan dengan pemandangannya.",
+          "⭐⭐⭐⭐⭐ — Pengalaman menunggang kuda di lautan pasir luar biasa.",
+          "⭐⭐⭐⭐⭐ — Gunung ini wajib dikunjungi minimal sekali seumur hidup."
+        ],
+        gambar: "https://images.unsplash.com/photo-1602154663343-89fe0bf541ab?q=80&w=1080&auto=format&fit=crop"
+      },
+      {
+        nama: "Raja Ampat",
+        alamat: "Kepulauan Raja Ampat, Papua Barat",
+        deskripsi: "Raja Ampat adalah surga bawah laut dunia yang terkenal karena keanekaragaman hayatinya yang sangat tinggi. Air lautnya yang jernih memungkinkan penyelam melihat terumbu karang berwarna-warni dan berbagai jenis ikan tropis. Selain diving dan snorkeling, wisatawan juga dapat menikmati keindahan gugusan pulau karst yang menawan dari atas bukit Piaynemo.",
+        review: [
+          "⭐⭐⭐⭐⭐ — Tempat paling indah yang pernah saya datangi.",
+          "⭐⭐⭐⭐⭐ — Air lautnya sangat jernih dan biru.",
+          "⭐⭐⭐⭐⭐ — Cocok untuk penyelam dan fotografer alam.",
+          "⭐⭐⭐⭐ — Akses cukup sulit tapi hasilnya luar biasa.",
+          "⭐⭐⭐⭐⭐ — Alam bawah lautnya benar-benar tak tertandingi."
+        ],
+        gambar: "https://images.unsplash.com/photo-1703769605297-cc74106244d9?q=80&w=1080&auto=format&fit=crop"
+      },
+      {
+        nama: "Candi Borobudur",
+        alamat: "Magelang, Jawa Tengah",
+        deskripsi: "Candi Borobudur merupakan warisan dunia UNESCO dan candi Buddha terbesar di dunia. Struktur candi ini terdiri atas ribuan relief dan ratusan stupa yang menggambarkan perjalanan spiritual menuju pencerahan. Dikelilingi perbukitan hijau dan udara sejuk, Borobudur menjadi destinasi favorit wisatawan domestik dan mancanegara.",
+        review: [
+          "⭐⭐⭐⭐⭐ — Arsitekturnya luar biasa, penuh makna sejarah.",
+          "⭐⭐⭐⭐⭐ — Tempat yang tenang untuk refleksi dan belajar budaya.",
+          "⭐⭐⭐⭐ — Ramai saat akhir pekan tapi tetap nyaman.",
+          "⭐⭐⭐⭐⭐ — Pemandangan sunrise dari puncak candi sangat indah.",
+          "⭐⭐⭐⭐⭐ — Candi ini adalah simbol kebanggaan Indonesia."
+        ],
+        gambar: "https://images.unsplash.com/photo-1620549146396-9024d914cd99?q=80&w=1080&auto=format&fit=crop"
+      },
+      {
+        nama: "Nusa Penida",
+        alamat: "Klungkung, Bali",
+        deskripsi: "Nusa Penida terkenal dengan tebing-tebing curam dan pantai tersembunyi yang menakjubkan seperti Kelingking Beach, Crystal Bay, dan Broken Beach. Air lautnya jernih dan cocok untuk snorkeling maupun diving. Pulau ini menawarkan keindahan alami yang masih terjaga, jauh dari hiruk-pikuk wisata mainstream di Bali.",
+        review: [
+          "⭐⭐⭐⭐⭐ — Pemandangan di Kelingking Beach sungguh luar biasa.",
+          "⭐⭐⭐⭐ — Akses jalan cukup menantang, tapi sepadan.",
+          "⭐⭐⭐⭐⭐ — Air lautnya biru jernih dan segar.",
+          "⭐⭐⭐⭐⭐ — Tempat terbaik untuk healing dari kesibukan kota.",
+          "⭐⭐⭐⭐ — Perlu waktu lebih untuk menjelajahi seluruh spot."
+        ],
+        gambar: "https://girleatworld.net/wp-content/uploads/2018/04/nusa-penida-kelingking-1.jpg"
+      },
+      {
+        nama: "Tana Toraja",
+        alamat: "Sulawesi Selatan",
+        deskripsi: "Tana Toraja merupakan daerah pegunungan yang terkenal dengan budaya dan tradisi pemakamannya yang unik. Rumah adat Tongkonan yang megah dan upacara adat Rambu Solo’ menjadi daya tarik tersendiri bagi wisatawan. Pemandangan alam hijau berpadu dengan nilai-nilai budaya menjadikan Tana Toraja destinasi wisata budaya terbaik di Indonesia.",
+        review: [
+          "⭐⭐⭐⭐⭐ — Budayanya sangat menarik dan penuh filosofi.",
+          "⭐⭐⭐⭐⭐ — Pemandangan pegunungan yang menyejukkan.",
+          "⭐⭐⭐⭐ — Perjalanan cukup panjang tapi sepadan.",
+          "⭐⭐⭐⭐⭐ — Upacara adatnya benar-benar berkesan.",
+          "⭐⭐⭐⭐⭐ — Masyarakatnya ramah dan menjaga tradisi dengan baik."
+        ],
+        gambar: "https://bnp.jambiprov.go.id/wp-content/uploads/2023/02/tana-toraja-2.png"
+      },
+      {
+        nama: "Labuan Bajo",
+        alamat: "Nusa Tenggara Timur",
+        deskripsi: "Labuan Bajo dikenal sebagai gerbang menuju Taman Nasional Komodo. Dari sini wisatawan dapat berlayar ke Pulau Komodo, Padar, dan Pink Beach. Pemandangan lautnya yang biru dan gugusan pulau kecil menjadikan tempat ini favorit wisatawan. Labuan Bajo juga menawarkan penginapan mewah hingga spot sunset terbaik di Indonesia.",
+        review: [
+          "⭐⭐⭐⭐⭐ — Sunset di Labuan Bajo tidak ada duanya.",
+          "⭐⭐⭐⭐⭐ — Banyak pilihan tur laut yang menarik.",
+          "⭐⭐⭐⭐ — Cuaca cukup panas tapi pemandangannya keren.",
+          "⭐⭐⭐⭐⭐ — Komodo adalah pengalaman yang tak terlupakan.",
+          "⭐⭐⭐⭐⭐ — Pelayanan wisata di sini sangat profesional."
+        ],
+        gambar: "https://static.uc.ac.id/htb/2019/01/maxresdefault-768x432.jpg"
+      },
+      {
+        nama: "Kawah Ijen",
+        alamat: "Banyuwangi, Jawa Timur",
+        deskripsi: "Kawah Ijen terkenal dengan fenomena api biru yang hanya dapat dilihat di beberapa tempat di dunia. Pendakian ke puncaknya memberikan pengalaman menantang sekaligus memukau dengan pemandangan kawah berwarna toska. Di pagi hari, wisatawan juga dapat melihat aktivitas penambang belerang tradisional.",
+        review: [
+          "⭐⭐⭐⭐⭐ — Api birunya benar-benar spektakuler.",
+          "⭐⭐⭐⭐ — Perjalanan cukup berat tapi hasilnya memuaskan.",
+          "⭐⭐⭐⭐⭐ — Panorama kawah sangat indah.",
+          "⭐⭐⭐⭐⭐ — Pengalaman hiking yang tak terlupakan.",
+          "⭐⭐⭐⭐⭐ — Udara sejuk dan suasananya damai."
+        ],
+        gambar: "https://i0.wp.com/bbksdajatim.org/wp-content/uploads/2019/02/Ijen-view_01.jpg"
+      },
+      {
+        nama: "Pulau Weh",
+        alamat: "Sabang, Aceh",
+        deskripsi: "Pulau Weh merupakan surga tersembunyi di ujung barat Indonesia. Dikenal dengan keindahan bawah lautnya, pulau ini menawarkan spot snorkeling dan diving kelas dunia seperti Iboih dan Rubiah. Suasana yang tenang serta keindahan pantai pasir putih menjadikannya tempat ideal untuk beristirahat dari hiruk-pikuk kota.",
+        review: [
+          "⭐⭐⭐⭐⭐ — Air lautnya sebening kristal, luar biasa untuk snorkeling!",
+          "⭐⭐⭐⭐⭐ — Tempat tenang dan alami, cocok untuk relaksasi.",
+          "⭐⭐⭐⭐ — Akses ke pulau perlu kapal, tapi sepadan.",
+          "⭐⭐⭐⭐⭐ — Ikan dan karangnya sangat beragam.",
+          "⭐⭐⭐⭐⭐ — Suasana sunset di Iboih sangat menenangkan."
+        ],
+        gambar: "https://timesindonesia.co.id/_next/image?url=https%3A%2F%2Fcdn-1.timesmedia.co.id%2Fimages%2F2024%2F07%2F24%2FPotret-Pulau-Weh-dari-atas-udara.jpg&w=3840&q=70"
+      },
+      {
+        nama: "Wakatobi",
+        alamat: "Sulawesi Tenggara",
+        deskripsi: "Wakatobi adalah destinasi bahari terkenal di dunia karena keindahan terumbu karangnya yang spektakuler. Tempat ini termasuk dalam Cagar Biosfer Dunia UNESCO. Selain keindahan bawah lautnya, masyarakat lokal menjaga tradisi bahari yang khas dan ramah terhadap wisatawan.",
+        review: [
+          "⭐⭐⭐⭐⭐ — Diving di sini benar-benar pengalaman tak terlupakan.",
+          "⭐⭐⭐⭐⭐ — Lautnya tenang dan jernih, karang sangat indah.",
+          "⭐⭐⭐⭐ — Sedikit jauh, tapi worth it sekali.",
+          "⭐⭐⭐⭐⭐ — Salah satu spot diving terbaik di dunia.",
+          "⭐⭐⭐⭐⭐ — Masyarakatnya sangat ramah dan menjaga alam."
+        ],
+        gambar: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQR9dBUFsyLqwRcCUmwQiNWRlz3t6cqfKfUoQ&s"
+      }
+    ];
+
+    const hasil = document.getElementById("search-result");
+    const cardsContainer = document.getElementById("cards-container");
+    const btnCari = document.getElementById("search-btn");
+    const inputCari = document.getElementById("search-input");
+    const dataList = document.getElementById("destinasi-list");
+
+    dataDestinasi.forEach(dest => {
+      const option = document.createElement("option");
+      option.value = dest.nama;
+      dataList.appendChild(option);
+    });
+
+    const populer = ["Danau Toba", "Gunung Bromo", "Raja Ampat", "Candi Borobudur"];
+    dataDestinasi.filter(d => populer.includes(d.nama)).forEach(dest => {
+      const card = document.createElement("div");
+      card.className = "card";
+      card.innerHTML = `
+        <img src="${dest.gambar}" alt="${dest.nama}">
+        <h3>${dest.nama}</h3>
+        <button class="btn detail-btn" data-nama="${dest.nama}">Lihat Detail</button>
+      `;
+      cardsContainer.appendChild(card);
+    });
+
+    function tampilkanDetail(destinasi) {
+      hasil.innerHTML = `
+        <h3>${destinasi.nama}</h3>
+        <img src="${destinasi.gambar}" alt="${destinasi.nama}" width="100%">
+        <p><strong>Alamat:</strong> ${destinasi.alamat}</p>
+        <p>${destinasi.deskripsi}</p>
+        <h4>Ulasan Pengunjung:</h4>
+        <ul>${destinasi.review.map(r => `<li>${r}</li>`).join("")}</ul>
+      `;
+      hasil.style.display = "block";
+      hasil.scrollIntoView({ behavior: "smooth" });
+    }
+
+    document.querySelectorAll(".detail-btn").forEach(btn => {
+      btn.addEventListener("click", e => {
+        const nama = e.target.getAttribute("data-nama");
+        const destinasi = dataDestinasi.find(d => d.nama === nama);
+        if (destinasi) 
+          tampilkanDetail(destinasi);
+          fokuskanPeta(destinasi);
+      });
+    });
+
+    function cariDestinasi() {
+      const keyword = inputCari.value.trim().toLowerCase();
+      const hasilCari = dataDestinasi.find(d => d.nama.toLowerCase().includes(keyword));
+
+      if (hasilCari) tampilkanDetail(hasilCari);
+      else {
+        hasil.innerHTML = `<p>Destinasi "<strong>${keyword}</strong>" tidak ditemukan.</p>`;
+        hasil.style.display = "block";
+      }
+    }
+
+    btnCari.addEventListener("click", cariDestinasi);
+    inputCari.addEventListener("keydown", e => { if (e.key === "Enter") cariDestinasi(); });
+
+    var map = L.map('map').setView([-2.5489, 118.0149], 5);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+
+    const places = [
+      { name: "Gunung Bromo", coords: [-7.9425, 112.953], desc: "Jawa Timur" },
+      { name: "Raja Ampat", coords: [-0.2346, 130.5079], desc: "Papua Barat" },
+      { name: "Candi Borobudur", coords: [-7.6079, 110.2038], desc: "Jawa Tengah" },
+      { name: "Danau Toba", coords: [2.6889, 98.8753], desc: "Sumatera Utara" },
+      { name: "Labuan Bajo", coords: [-8.4966, 119.8871], desc: "Nusa Tenggara Timur" },
+      { name: "Nusa Penida", coords: [-8.7276, 115.5444], desc: "Bali" },
+      { name: "Kawah Ijen", coords: [-8.0581, 114.2422], desc: "Banyuwangi" },
+      { name: "Tana Toraja", coords: [-3.0047, 119.8363], desc: "Sulawesi Selatan" },
+      { name: "Pulau Weh", coords: [5.8881, 95.3166], desc: "Aceh" },
+      { name: "Wakatobi", coords: [-5.321, 123.593], desc: "Sulawesi Tenggara" }
+    ];
+
+    places.forEach(p => {
+      L.marker(p.coords).addTo(map).bindPopup(`<b>${p.name}</b><br>${p.desc}`);
+    });
+
+    function cariDestinasi() {
+      const keyword = inputCari.value.trim().toLowerCase();
+      const hasilCari = dataDestinasi.find(d => d.nama.toLowerCase().includes(keyword));
+      const lokasi = places.find(p => p.name.toLowerCase().includes(keyword));
+
+      if (hasilCari) {
+        tampilkanDetail(hasilCari);
+        if (lokasi) {
+          map.setView(lokasi.coords, 9); // zoom ke lokasi
+          L.popup()
+            .setLatLng(lokasi.coords)
+            .setContent(`<b>${lokasi.name}</b><br>${lokasi.desc}`)
+            .openOn(map);
+        }
+      } else {
+        hasil.innerHTML = `<p>Destinasi "<strong>${keyword}</strong>" tidak ditemukan.</p>`;
+        hasil.style.display = "block";
+      }
+    }
+
+    btnCari.addEventListener("click", cariDestinasi);
+    inputCari.addEventListener("keydown", e => { if (e.key === "Enter") cariDestinasi(); });
+
+    function fokuskanPeta(destinasi) {
+      const lokasi = places.find(p => p.name === destinasi.nama);
+      if (lokasi) {
+        map.setView(lokasi.coords, 9);
+        L.popup()
+          .setLatLng(lokasi.coords)
+          .setContent(`<b>${lokasi.name}</b><br>${lokasi.desc}`)
+          .openOn(map);
+        }
+    }
+  </script>
+</body>
+</html>
